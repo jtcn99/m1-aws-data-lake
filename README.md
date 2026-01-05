@@ -39,4 +39,4 @@ Prerequisites
 
 Owner: jtamas@cloud-nation.de 
 
-Date: January 2026
+Date: 05.01.2026
