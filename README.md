@@ -28,6 +28,19 @@ This project establishes a Serverless Data Lake on AWS. It ingests air quality d
 └── README.md
 
 ```
+
+## Lokales Setup (Status: Done ✅)
+
+Die lokale Entwicklungsumgebung wurde wie folgt konfiguriert:
+
+1.  **Terraform:** Installiert via Winget/Download (Version v1.x verified).
+2.  **AWS CLI:** Konfiguriert mit dediziertem Profil, um Prod/Dev Trennung zu gewährleisten.
+    * Befehl: `aws configure --profile openaq-project`
+    * Region: `eu-central-1`
+3.  **Verifizierung:**
+    * Verbindungstest via `aws sts get-caller-identity` erfolgreich.
+    * Terraform Init/Plan im Ordner `terraform/sandbox` erfolgreich ausgeführt (Authentifizierung bestätigt).
+
 ## Getting Started
 Prerequisites
 * AWS CLI configured with a valid profile
