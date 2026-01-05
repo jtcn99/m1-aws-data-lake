@@ -9,8 +9,7 @@ terraform {
 
 # Wir nutzen explizit das Profil, das wir gerade angelegt haben
 provider "aws" {
-  region  = "eu-central-1"
-  profile = "openaq-project"
+  region = "eu-central-1"
 }
 
 # Test: Wir fragen AWS: "Wer bin ich?" (Liest nur Daten, erstellt nichts)

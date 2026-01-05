@@ -29,27 +29,75 @@ This project establishes a Serverless Data Lake on AWS. It ingests air quality d
 
 ```
 
-## Lokales Setup (Status: Done ✅)
+## Lokales Setup & Voraussetzungen
 
-Die lokale Entwicklungsumgebung wurde wie folgt konfiguriert:
+Die folgende Konfiguration ist notwendig, um das Projekt lokal auszuführen und Deployments durchzuführen.
 
-1.  **Terraform:** Installiert via Winget/Download (Version v1.x verified).
-2.  **AWS CLI:** Konfiguriert mit dediziertem Profil, um Prod/Dev Trennung zu gewährleisten.
-    * Befehl: `aws configure --profile openaq-project`
-    * Region: `eu-central-1`
-3.  **Verifizierung:**
-    * Verbindungstest via `aws sts get-caller-identity` erfolgreich.
-    * Terraform Init/Plan im Ordner `terraform/sandbox` erfolgreich ausgeführt (Authentifizierung bestätigt).
+### 1. AWS Konfiguration (Profil & Auth)
 
-## Getting Started
-Prerequisites
-* AWS CLI configured with a valid profile
+Das Projekt erwartet ein konfiguriertes AWS CLI Profil namens **`openaq-project`**.
+Um Terraform und die CLI zu authentifizieren, ohne Credentials im Code zu speichern, nutzen wir Umgebungsvariablen.
 
-* Terraform installed (v1.x+)
+**Einmaliges Setup:**
 
-* Python 3.9+
+1. Access Keys für deinen IAM User erstellen (via AWS Konsole).
+2. Lokal konfigurieren: `aws configure --profile openaq-project` (Region: `eu-central-1`).
 
+**Vor der Arbeit (im Terminal):**
+Damit Terraform das Profil findet, setze die Umgebungsvariable für deine aktuelle Session:
 
-Owner: jtamas@cloud-nation.de 
+```powershell
+# PowerShell (Windows / PyCharm Terminal)
+$Env:AWS_PROFILE = "openaq-project"
 
-Date: 05.01.2026
+# Verifizierung (Muss deine UserID zurückgeben)
+aws sts get-caller-identity
+
+```
+
+### 2. Infrastructure as Code (Terraform)
+
+Der Einstiegspunkt für die Infrastruktur liegt aktuell in der Sandbox.
+
+```bash
+cd terraform/sandbox
+
+# Initialisierung der Provider
+terraform init
+
+# Planen der Änderungen (Dry-Run)
+terraform plan
+
+```
+
+*Hinweis: Der `provider "aws"` Block im Code ist neutral gehalten. Er verlässt sich auf die Umgebungsvariable `AWS_PROFILE`, die im Schritt 1 gesetzt wurde.*
+
+### 3. Quality Gates (Pre-Commit Hooks)
+
+Dieses Repo nutzt `pre-commit`, um Terraform-Code automatisch zu formatieren (`terraform fmt`), bevor er committed wird.
+
+**Installation (einmalig):**
+
+```bash
+# 1. Pre-commit Framework installieren
+pip install pre-commit
+
+# 2. Git Hooks im Repo aktivieren
+pre-commit install
+
+```
+
+Ab jetzt wird bei jedem `git commit` automatisch geprüft, ob der Code sauber formatiert ist.
+
+## Prerequisites Summary
+
+* **AWS CLI:** Configured with profile `openaq-project`.
+* **Terraform:** v1.x installed.
+* **Python:** 3.9+ (for Lambda & hooks).
+* **Git Hooks:** `pre-commit` installed and active.
+
+---
+
+**Owner:** jtamas@cloud-nation.de
+
+**Last Updated:** 05.01.2026
