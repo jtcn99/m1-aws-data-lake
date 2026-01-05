@@ -1,7 +1,7 @@
 # main.tf
 # This file defines WHAT is being built (the resources).
 
-# --- PART 1: Helper Resources ---
+# --- Helper Resources ---
 
 # Random ID for unique bucket names
 # S3 bucket names must be globally unique. This generates a random suffix.
@@ -22,7 +22,7 @@ resource "aws_kms_alias" "datalake_key_alias" {
   target_key_id = aws_kms_key.datalake_key.key_id
 }
 
-# --- PART 2: Storage (S3) ---
+# --- Storage (S3) ---
 
 resource "aws_s3_bucket" "raw_layer" {
   # Name convention: project-raw-randomID
@@ -39,7 +39,7 @@ resource "aws_s3_bucket" "raw_layer" {
   }
 }
 
-# --- PART 3: Security & Encryption ---
+# --- Security & Encryption ---
 
 # Block Public Access (No one from the outside can enter)
 resource "aws_s3_bucket_public_access_block" "raw_layer_security" {
@@ -63,4 +63,70 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "raw_layer_encrypt
       kms_master_key_id = aws_kms_key.datalake_key.arn
     }
   }
+}
+
+# --- IAM Role & Permissions (The "ID Card" for Lambda) ---
+
+# 1. The Role (The Identity itself)
+# Defines "WHO" is allowed to assume this role -> The AWS Lambda Service.
+resource "aws_iam_role" "lambda_role" {
+  name = "openaq-lambda-execution-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "lambda.amazonaws.com"
+      }
+    }]
+  })
+}
+
+# 2. The Policy (What is allowed with this ID card?)
+resource "aws_iam_policy" "lambda_policy" {
+  name        = "openaq-lambda-custom-policy"
+  description = "Permissions for OpenAQ Ingestion: S3 Write, KMS Use, Logging"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      # Rule A: Write Logs (Essential for debugging)
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = "arn:aws:logs:*:*:*"
+      },
+      # Rule B: Write to S3 Bucket
+      {
+        Effect = "Allow"
+        Action = "s3:PutObject"
+        # CRITICAL: We allow writing ONLY to the prefix "raw/openaq/"
+        # If Lambda tries to write elsewhere, it gets blocked.
+        Resource = "${aws_s3_bucket.raw_layer.arn}/raw/openaq/*"
+      },
+      # Rule C: Use the KMS Key
+      # Since the bucket is encrypted, Lambda needs permission to use the key
+      # to seal the data (GenerateDataKey) when writing.
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:GenerateDataKey",
+          "kms:Decrypt"
+        ]
+        Resource = aws_kms_key.datalake_key.arn
+      }
+    ]
+  })
+}
+
+# 3. Attachment (Glues the rules to the ID card)
+resource "aws_iam_role_policy_attachment" "lambda_attach" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.lambda_policy.arn
 }

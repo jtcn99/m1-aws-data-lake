@@ -48,6 +48,28 @@ Die Daten werden partitioniert abgelegt, um performante Abfragen zu ermöglichen
 **Beispielpfad:**
 `raw/openaq/measurements/dt=2026-01-05/openaq_data_20260105_1200.parquet`
 
+## Security & IAM (Least Privilege)
+
+Das Projekt folgt dem "Least Privilege" Prinzip. Die Lambda-Funktion erhält keine pauschalen Admin-Rechte, sondern nur exakt das, was sie benötigt.
+
+### Lambda Execution Role
+**Rolle:** `openaq-lambda-execution-role`
+
+Die Berechtigungen sind strikt limitiert (Scoped Access):
+
+1.  **S3 Write Access:**
+    * ✅ Erlaubt: Schreiben in `raw/openaq/*`
+    * ⛔ Blockiert: Schreiben in Root oder andere Folder.
+    * *Warum?* Verhindert Datenchaos und versehentliches Überschreiben anderer Datenprodukte.
+
+2.  **KMS Encryption:**
+    * ✅ Erlaubt: Nutzung des Customer Managed Keys (`kms:GenerateDataKey`) zum Verschlüsseln neuer Objekte.
+    * *Warum?* Ohne diese Berechtigung würde der Upload in den verschlüsselten Bucket fehlschlagen (Access Denied).
+
+3.  **Observability:**
+    * ✅ Erlaubt: Schreiben von Logs nach CloudWatch.
+    * *Warum?* Ermöglicht Monitoring und Debugging der Pipeline.
+
 ## Lokales Setup & Voraussetzungen
 
 Die folgende Konfiguration ist notwendig, um das Projekt lokal auszuführen und Deployments durchzuführen.
