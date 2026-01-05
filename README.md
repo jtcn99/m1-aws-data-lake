@@ -28,6 +28,25 @@ This project establishes a Serverless Data Lake on AWS. It ingests air quality d
 └── README.md
 
 ```
+## Data Lake Design (S3)
+
+### Raw Layer
+Der **Raw Layer** dient als "Source of Truth". Hier werden die Daten der OpenAQ-API unverändert (aber ins Parquet-Format konvertiert) abgelegt.
+Es finden keine Aggregationen oder Löschungen statt, um historische Analysen jederzeit neu berechnen zu können.
+
+* **Bucket-Namenskonvention:** `openaq-datalake-raw-[random-id]`
+* **Sicherheit:**
+  * **Block Public Access:** Aktiviert (kein öffentlicher Zugriff).
+  * **Encryption:** Server-Side Encryption via KMS (Customer Managed Key) für maximale Kontrolle über den Datenschlüssel.
+
+### Folder Structure (Prefixes)
+Die Daten werden partitioniert abgelegt, um performante Abfragen zu ermöglichen (Hive-Style Partitioning).
+
+**Schema:**
+`raw/openaq/measurements/dt=YYYY-MM-DD/`
+
+**Beispielpfad:**
+`raw/openaq/measurements/dt=2026-01-05/openaq_data_20260105_1200.parquet`
 
 ## Lokales Setup & Voraussetzungen
 
