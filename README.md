@@ -36,6 +36,12 @@ Prerequisites
 
 * Python 3.9+
 
+## CI/CD (GitHub Actions)
+* Workflow: `.github/workflows/terraform.yml`
+* Triggers: PRs and pushes to `main` that touch `terraform/`, plus manual runs
+* Secrets: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`
+* Behavior: fmt/validate/plan on PRs, plan + apply on pushes to `main`
+
 
 Owner: jtamas@cloud-nation.de 
 
