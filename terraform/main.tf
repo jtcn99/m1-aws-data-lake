@@ -36,6 +36,15 @@ resource "aws_s3_bucket_public_access_block" "raw_layer_security" {
   restrict_public_buckets = true
 }
 
+resource "aws_s3_bucket_public_access_block" "raw_layer_block" {
+  bucket = aws_s3_bucket.raw_layer.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
 # S3 Encryption Link
 resource "aws_s3_bucket_server_side_encryption_configuration" "raw_layer_encrypt" {
   bucket = aws_s3_bucket.raw_layer.id
@@ -46,6 +55,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "raw_layer_encrypt
     }
   }
 }
+
 
 # --- Secrets Manager ---
 resource "aws_secretsmanager_secret" "openaq_key" {
@@ -60,6 +70,42 @@ data "archive_file" "lambda_zip" {
   type        = "zip"
   source_dir  = "${path.module}/../src"
   output_path = "${path.module}/lambda_function.zip"
+}
+
+resource "aws_s3_bucket_policy" "raw_layer_policy" {
+  bucket = aws_s3_bucket.raw_layer.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        # Statement 1: Zugriff nur für die Lambda-Rolle erlauben
+        Sid       = "AllowOnlyLambdaWrite"
+        Effect    = "Allow"
+        Principal = {
+          AWS = aws_iam_role.lambda_role.arn
+        }
+        Action    = "s3:PutObject"
+        Resource  = "${aws_s3_bucket.raw_layer.arn}/raw/openaq/*"
+      },
+      {
+        # Statement 2: HTTPS erzwingen (Unverschlüsselten Transport verbieten)
+        Sid       = "DenyNonSecureTransport"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource = [
+          aws_s3_bucket.raw_layer.arn,
+          "${aws_s3_bucket.raw_layer.arn}/*"
+        ]
+        Condition = {
+          Bool = {
+            "aws:SecureTransport" = "false" # Verweigert Zugriff bei HTTP
+          }
+        }
+      }
+    ]
+  })
 }
 
 resource "aws_lambda_function" "ingest_function" {
