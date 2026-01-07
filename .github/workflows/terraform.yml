@@ -22,7 +22,6 @@ env:
 
 jobs:
   terraform:
-    if: ${{ hashFiles('terraform/**/*.tf') != '' }}
     runs-on: ubuntu-latest
     defaults:
       run:
