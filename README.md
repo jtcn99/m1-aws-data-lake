@@ -163,27 +163,23 @@ Die Daten werden partitioniert abgelegt, um performante Abfragen zu ermöglichen
 **Beispielpfad:**
 `raw/openaq/measurements/dt=2026-01-05/openaq_data_20260105_1200.parquet`
 
-## Security & IAM (Least Privilege)
+### 🔒 Security & IAM (Least Privilege)
+Das Projekt folgt konsequent dem **"Least Privilege" Prinzip**. Die Lambda-Funktion erhält keine pauschalen Admin-Rechte, sondern nur exakt die Berechtigungen, die für den Betrieb notwendig sind:
 
-Das Projekt folgt dem "Least Privilege" Prinzip. Die Lambda-Funktion erhält keine pauschalen Admin-Rechte, sondern nur exakt das, was sie benötigt.
-
-### Lambda Execution Role
-**Rolle:** `openaq-lambda-execution-role`
-
-Die Berechtigungen sind strikt limitiert (Scoped Access):
-
-1.  **S3 Write Access:**
-    * ✅ Erlaubt: Schreiben in `raw/openaq/*`
-    * ⛔ Blockiert: Schreiben in Root oder andere Folder.
-    * *Warum?* Verhindert Datenchaos und versehentliches Überschreiben anderer Datenprodukte.
-
-2.  **KMS Encryption:**
-    * ✅ Erlaubt: Nutzung des Customer Managed Keys (`kms:GenerateDataKey`) zum Verschlüsseln neuer Objekte.
-    * *Warum?* Ohne diese Berechtigung würde der Upload in den verschlüsselten Bucket fehlschlagen (Access Denied).
-
-3.  **Observability:**
-    * ✅ Erlaubt: Schreiben von Logs nach CloudWatch.
-    * *Warum?* Ermöglicht Monitoring und Debugging der Pipeline.
+* **Rolle:** `openaq-lambda-execution-role`
+* **S3 Write Access (Scoped):**
+    * ✅ **Erlaubt:** Schreiben exklusiv in den Prefix `raw/openaq/*`.
+    * ⛔ **Blockiert:** Zugriff auf den Bucket-Root oder andere Ordner.
+    * *Warum?* Verhindert Datenchaos und schützt die Integrität anderer Datenprodukte im Data Lake.
+* **KMS Encryption:**
+    * ✅ **Erlaubt:** Nutzung des Customer Managed Keys (`kms:GenerateDataKey`).
+    * *Warum?* Erforderlich, um Daten im verschlüsselten Ziel-Bucket sicher abzulegen (SSE-KMS).
+* **Observability & Logging (Option B):**
+    * ✅ **Erlaubt:** Erstellen von Log-Streams und Schreiben von Events nur in die eigene Log-Gruppe.
+    * *Warum?* Ermöglicht präzises Debugging bei maximaler Isolation gegenüber anderen Services.
+* **S3 Infrastructure Hardening:**
+    * ✅ **Block Public Access:** Alle öffentlichen Zugriffswege sind hardwareseitig gesperrt.
+    * ✅ **Secure Transport:** Zugriff ist nur via verschlüsseltem HTTPS möglich.
 
 ## Lokales Setup & Voraussetzungen
 
