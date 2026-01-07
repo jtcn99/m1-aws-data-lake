@@ -130,3 +130,52 @@ resource "aws_iam_role_policy_attachment" "lambda_attach" {
   role       = aws_iam_role.lambda_role.name
   policy_arn = aws_iam_policy.lambda_policy.arn
 }
+
+# --- PART 5: Lambda Function & Application Logic ---
+
+# 1. Zip the Code (Terraform packs your python file)
+data "archive_file" "lambda_zip" {
+  type        = "zip"
+  # Wir gehen zwei Ordner hoch (../../) um in den lambda Ordner zu kommen
+  source_file = "${path.module}/../../lambda/ingest.py"
+  output_path = "${path.module}/lambda_ingest.zip"
+}
+
+# 2. Get the AWS Pandas Layer (Pre-built toolbox for Python 3.10)
+# Documentation/Versions: https://github.com/aws/aws-sdk-pandas/releases
+resource "aws_lambda_layer_version_permission" "allow_usage" {
+  # ARN für eu-central-1 (Frankfurt) und Python 3.10
+  layer_name     = "arn:aws:lambda:eu-central-1:336392948345:layer:AWSSDKPandas-Python310:12"
+  action         = "lambda:GetLayerVersion"
+  principal      = "*"
+  statement_id   = "AllowUsage"
+  version_number = 12
+}
+
+# 3. The Function itself
+resource "aws_lambda_function" "ingest_function" {
+  filename      = data.archive_file.lambda_zip.output_path
+  function_name = "openaq-ingestion-service"
+  role          = aws_iam_role.lambda_role.arn
+  handler       = "ingest.lambda_handler" # filename.function_name
+
+  # WICHTIG: Hier nutzen wir jetzt 3.10, passend zu deinem Laptop
+  runtime       = "python3.10"
+
+  timeout       = 60  # 60 Sekunden Zeit (Standard 3s ist zu kurz für Daten)
+  memory_size   = 512 # Pandas braucht Arbeitsspeicher (512MB ist sicher)
+
+  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+
+  # Attach the "Toolbox" (Layer)
+  layers = [
+    "arn:aws:lambda:eu-central-1:336392948345:layer:AWSSDKPandas-Python310:12"
+  ]
+
+  # Environment Variables (Inject config into code)
+  environment {
+    variables = {
+      BUCKET_NAME = aws_s3_bucket.raw_layer.bucket
+    }
+  }
+}
