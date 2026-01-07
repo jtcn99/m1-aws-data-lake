@@ -16,7 +16,7 @@ class Config:
         self.secret_name = os.environ.get('SECRET_NAME', "")
         self.region_name = os.environ.get('AWS_REGION', "")
 
-        self.s3_prefix = "openaq/"
+        self.s3_prefix = "raw/openaq/"
 
         # 2. Fetch the API Key using your snippet logic
         self.api_key = self._get_secret(self.secret_name, self.region_name)

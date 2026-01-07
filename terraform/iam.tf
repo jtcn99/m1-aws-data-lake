@@ -1,3 +1,6 @@
+data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}
+
 resource "aws_iam_role" "lambda_role" {
   name = "${var.project_name}-lambda-role"
 
@@ -18,15 +21,16 @@ resource "aws_iam_policy" "lambda_policy" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      {
+      { # LOGGING
         Effect = "Allow"
         Action = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
-        Resource = "arn:aws:logs:*:*:*"
+        # Wir bauen den ARN: arn:aws:logs:REGION:ACCOUNT-ID:log-group:/aws/lambda/FUNCTION-NAME:*
+        Resource = "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_name}-ingest:*"
       },
-      {
+      { # S3 WRITE
         Effect = "Allow"
         Action = "s3:PutObject"
-        Resource = "${aws_s3_bucket.raw_layer.arn}/*"
+        Resource = "${aws_s3_bucket.raw_layer.arn}/raw/openaq/*"
       },
       {
         Effect = "Allow"
