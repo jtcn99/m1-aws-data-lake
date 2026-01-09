@@ -18,3 +18,9 @@ variable "lambda_layer_arn" {
   # Check https://github.com/aws/aws-sdk-pandas/releases for updates
   default     = "arn:aws:lambda:eu-central-1:336392948345:layer:AWSSDKPandas-Python310:12"
 }
+
+variable "max_pages" {
+  description = "Number of pages to ingest. Set to -1 for unlimited."
+  type        = string
+  default     = "1"
+}

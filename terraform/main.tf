@@ -126,6 +126,7 @@ resource "aws_lambda_function" "ingest_function" {
       BUCKET_NAME = aws_s3_bucket.raw_layer.bucket
       API_URL     = "https://api.openaq.org/v3/locations"
       SECRET_NAME = aws_secretsmanager_secret.openaq_key.name
+      MAX_PAGES = var.max_pages
     }
   }
 }
