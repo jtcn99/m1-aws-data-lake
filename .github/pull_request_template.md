@@ -7,6 +7,7 @@
 - [ ] Bug fix
 - [ ] New feature (infrastructure or logic)
 - [ ] Documentation update
+- [ ] Chore
 
 ## Technical Details
 ## Checklist
